@@ -43,6 +43,20 @@
   const fx = document.getElementById("fx");
   const ctaEl = document.querySelector(".cta");
 
+  // Cached viewport height — same rationale as app.js: on mobile the browser
+  // chrome (URL bar) resizes window.innerHeight mid-scroll, so we pin VH and
+  // only refresh it on a real width change. The document's scroll length is
+  // set in px from VH (rather than CSS `vh`) so the panel scroll math and the
+  // body height always agree on the same number.
+  let VH = window.innerHeight;
+  let lastW = window.innerWidth;
+  const lastPanel = panels[panels.length - 1];
+  const STORY_VH = lastPanel.start + lastPanel.span + 1;
+  function applyStoryHeight() {
+    document.body.style.minHeight = (STORY_VH * VH) + "px";
+  }
+  applyStoryHeight();
+
   const STACK_SIZES = [26, 36];   // [left small, right large] — ~10 coins taller per stack
   const FALL_PX = 240;            // how far above each coin starts before falling
   const COIN_STEP_PX = 11;        // vertical spacing per coin in stack (matches .coin bottom step)
@@ -202,8 +216,7 @@
   // Master scroll handler
   // ============================================================
   function update() {
-    const vh = window.innerHeight;
-    const s = window.scrollY / vh;
+    const s = window.scrollY / VH;
 
     const storyOn = smoothstep(0.55, 1.0, s);
     story.style.setProperty("--story-on", storyOn.toFixed(3));
@@ -250,6 +263,15 @@
     requestAnimationFrame(() => { scrollScheduled = false; update(); });
   }
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", update);
+  // only treat a width change as a real resize — a height-only change on mobile
+  // is just the URL bar and must not re-flow the scroll story.
+  window.addEventListener("resize", () => {
+    if (window.innerWidth !== lastW) {
+      lastW = window.innerWidth;
+      VH = window.innerHeight;
+      applyStoryHeight();
+    }
+    update();
+  });
   update();
 })();

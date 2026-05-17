@@ -39,7 +39,10 @@
   const state = {
     canvas: null,
     ctx: null,
-    dpr: Math.min(window.devicePixelRatio || 1, 2),
+    // coarse-pointer (touch) devices get a lower pixel-ratio cap — the globe
+    // is a per-frame canvas redraw, so 3x retina is needless work on a phone GPU
+    dpr: Math.min(window.devicePixelRatio || 1,
+      window.matchMedia("(hover: none)").matches ? 1.5 : 2),
     w: 0, h: 0,
 
     sphere: { type: 'Sphere' },

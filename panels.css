@@ -803,3 +803,16 @@
   .act-logos { justify-content: center; }
   .p3-stage { width: min(680px, 92vw); }
 }
+
+/* phones — the coin stacks / wallet are fixed-pixel props, so scale the whole
+   stage down rather than let them overflow a narrow viewport. */
+@media (max-width: 600px) {
+  .p1-stage {
+    transform: scale(0.74);
+    transform-origin: bottom center;
+    gap: 40px;
+  }
+  .p2-stage { width: 94vw; }
+  .wallet { transform: rotateX(12deg) scale(0.62); }
+  .act-name { font-size: clamp(24px, 8.5vw, 38px); }
+}

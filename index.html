@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
 <title>addictd.ai — initial concept</title>
 <link rel="preload" href="assets/logo-black.png" as="image" />
 <link rel="preload" href="assets/logo-purple.png" as="image" />
@@ -10,6 +11,7 @@
 <link rel="stylesheet" href="retention.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet" />
 <style>
   :root {
@@ -69,6 +71,20 @@
     transform: translate(-50%, -50%);
     will-change: transform, filter;
   }
+  /* static logo shown until the WebGL textures finish loading — keeps the hero
+     legible on slow connections / low-end devices, then fades out once the
+     shader has the real art. */
+  .logo-fallback {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    filter: brightness(1.4) contrast(1.05);
+    opacity: 1;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .logo-fallback.is-hidden { opacity: 0; }
   /* the WebGL canvas spans full viewport so the mouse-followed ink can roam, but the
      logo art only appears in the centered logo footprint */
   #fx {
@@ -157,7 +173,9 @@
     <div class="scanlines"></div>
     <div class="vignette"></div>
 
-    <div class="logo-wrap" id="logoWrap"></div>
+    <div class="logo-wrap" id="logoWrap">
+      <img class="logo-fallback" id="logoFallback" src="assets/logo-black.png" alt="addictd.ai" />
+    </div>
 
     <!-- hero copy — stacked under the logo, scrolls/blurs out with the stage -->
     <div class="hero-copy">
@@ -325,9 +343,9 @@
   <script type="module" src="app.js"></script>
 
   <!-- d3-geo + topojson-client for panel 03's globe -->
-  <script src="https://unpkg.com/d3-array@3/dist/d3-array.min.js"></script>
-  <script src="https://unpkg.com/d3-geo@3/dist/d3-geo.min.js"></script>
-  <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="https://unpkg.com/d3-array@3/dist/d3-array.min.js" defer></script>
+  <script src="https://unpkg.com/d3-geo@3/dist/d3-geo.min.js" defer></script>
+  <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js" defer></script>
 
   <script src="panels.js" defer></script>
   <script src="globe.js" defer></script>

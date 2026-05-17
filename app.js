@@ -16,7 +16,10 @@ const logoWrap = document.getElementById("logoWrap");
 const progressEl = document.getElementById("progress");
 const cursor = document.getElementById("cursor");
 
-const dpr = Math.min(window.devicePixelRatio || 1, 2);
+// coarse-pointer (touch) devices get a lower pixel-ratio cap — a full-viewport
+// WebGL canvas at 3x retina is needless work on a phone GPU.
+const isCoarse = window.matchMedia("(hover: none)").matches;
+const dpr = Math.min(window.devicePixelRatio || 1, isCoarse ? 1.5 : 2);
 
 const renderer = new THREE.WebGLRenderer({
   canvas: fx,
@@ -34,7 +37,10 @@ const outScene = new THREE.Scene();
 
 // --- Load logo textures
 const loader = new THREE.TextureLoader();
-const logoBlack = loader.load("assets/logo-black.png");
+// once the real logo texture is in, fade out the static <img> fallback
+const logoBlack = loader.load("assets/logo-black.png", () => {
+  document.getElementById("logoFallback")?.classList.add("is-hidden");
+});
 const logoPurple = loader.load("assets/logo-purple.png");
 [logoBlack, logoPurple].forEach((t) => {
   t.minFilter = THREE.LinearFilter;
@@ -259,9 +265,17 @@ outScene.add(outQuad);
 
 // ----- Layout / sizing
 let W = 0, H = 0;
+// VH is the viewport height we drive scroll math from. On mobile the browser
+// chrome (URL bar) shows/hides during scroll, changing window.innerHeight every
+// frame — if scroll progress tracked that live value the whole page would
+// shimmy. So we cache VH and only refresh it when the *width* changes (a real
+// orientation / window resize), keeping vertical scrolling rock-steady.
+let VH = window.innerHeight;
+let lastW = window.innerWidth;
 function resize() {
   W = window.innerWidth;
   H = window.innerHeight;
+  if (W !== lastW) { lastW = W; VH = H; }
   renderer.setSize(W, H, false);
 
   // sim resolution: keep small for perf, square-ish based on the logo footprint
@@ -321,7 +335,7 @@ window.addEventListener("pointerleave", () => { mouse.inside = 0; });
 // The incoming story panels are driven separately in panels.js.
 function onScroll() {
   const y = window.scrollY;
-  const p = Math.min(1, y / window.innerHeight);
+  const p = Math.min(1, y / VH);
   progressEl.style.width = (p * 100).toFixed(2) + "%";
 
   // hero stage parallaxes / scales out
@@ -359,7 +373,7 @@ function frame(now) {
   // Skip the WebGL sim + composite entirely while it's off-screen so the
   // downstream panels (esp. the globe) get the full frame budget — the rAF
   // stays alive so the effect resumes the moment the hero scrolls back in.
-  if (window.scrollY < window.innerHeight * 1.3) {
+  if (window.scrollY < VH * 1.3) {
     // velocity (logo-uv per frame)
     mouse.vel.set(mouse.pos.x - mouse.prev.x, mouse.pos.y - mouse.prev.y);
     mouse.prev.copy(mouse.pos);
