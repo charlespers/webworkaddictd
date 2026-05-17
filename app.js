@@ -393,19 +393,26 @@ resize();
 onScroll();
 requestAnimationFrame(frame);
 
-// ----- Subtle entrance: pulse ink at center on load so user sees the effect immediately
+// ----- Initial entrance: a 1s ink sweep across the logo on load, so the
+// hover-reveal effect announces itself before the visitor touches anything.
 (function entrance() {
-  let t = 0;
-  function tick() {
-    t += 1;
-    mouse.pos.set(0.5, 0.5);
+  const DURATION = 1000; // ms
+  let start = 0;
+  function tick(now) {
+    if (!start) start = now;
+    const t = Math.min(1, (now - start) / DURATION);
+    // ease in-out across the run
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    // sweep left→right with a gentle vertical arc so the ink trails across
+    mouse.pos.set(0.12 + e * 0.76, 0.5 + Math.sin(e * Math.PI) * 0.13);
     mouse.inside = 1;
-    if (t < 12) requestAnimationFrame(tick);
-    else {
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    } else {
       mouse.inside = 0;
       mouse.pos.set(-9, -9);
     }
   }
-  // delay so textures have loaded
-  setTimeout(tick, 350);
+  // small delay so the logo textures have loaded
+  setTimeout(() => requestAnimationFrame(tick), 350);
 })();

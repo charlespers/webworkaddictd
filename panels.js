@@ -1,16 +1,16 @@
 // panels.js — drives the two sweep-in panels and their scroll-driven
 // internal animations.
 //
-// Scroll layout (body min-height: 1400vh):
-//   0..1     vh  hero (driven by app.js)
-//   1..3     vh  panel 1 (instant payouts) — coins build
-//   3..4.5   vh  panel 2 (highest RPMs)    — cash drops, flap closes
-//   4.5..9   vh  panel 3 (geo payouts)     — globe parks on US → UK → BR → IN
-//   9..11.5  vh  panel 4 (retention)       — curve → bars → gauges → metrics
-//  11.5..13  vh  close CTA — a hairline expands into a full-screen neon frame
+// Scroll layout (body min-height: 1670vh):
+//   0..1      vh  hero (driven by app.js)
+//   1..3.3    vh  panel 1 (instant payouts) — coins build
+//   3.3..5.4  vh  panel 2 (highest RPMs)    — cash drops, flap closes
+//   5.4..10.6 vh  panel 3 (geo payouts)     — globe parks on US → UK → BR → IN
+//  10.6..13.7 vh  panel 4 (retention)       — curve → bars → gauges → metrics
+//  13.7..15.7 vh  close CTA — a hairline expands into a full-screen neon frame
 //
-// Every panel ends on a dwell (the gap between `build` and `exit`) — a scroll
-// stop where the panel's final state holds before its wipe-out.
+// Every panel ends on a generous dwell (the gap between `build` and `exit`) —
+// a scroll pause where the final state holds before the wipe-out.
 //
 // Each panel has kind / start / span / enter / build / exit (all in
 // slot-normalised qn 0→1). enter→build drives the internal animation; the
@@ -23,22 +23,22 @@
     // Every panel: wipe-in (0→enter), internal animation (enter→build), then a
     // dwell (build→exit) where the final state holds while you keep scrolling
     // — the "scroll stop" between acts — then wipe-out (exit→1).
-    { el: document.querySelector('.panel-1'), kind: 'coins', start: 1.0, span: 2.0,
-      enter: 0.10, build: 0.50, exit: 0.82 },
-    { el: document.querySelector('.panel-2'), kind: 'wallet', start: 3.0, span: 1.5,
-      enter: 0.16, build: 0.60, exit: 0.84 },
-    // panel 3 — geo globe — 4.5-viewport slot; the globe parks on each country
+    { el: document.querySelector('.panel-1'), kind: 'coins', start: 1.0, span: 2.3,
+      enter: 0.11, build: 0.45, exit: 0.87 },
+    { el: document.querySelector('.panel-2'), kind: 'wallet', start: 3.3, span: 2.1,
+      enter: 0.12, build: 0.43, exit: 0.84 },
+    // panel 3 — geo globe — wide slot; the globe parks on each country
     // (see globe.js PHASES) and holds on the last one through the end dwell.
-    { el: document.querySelector('.panel-3'), kind: 'globe', start: 4.5, span: 4.5,
-      enter: 0.07, build: 0.86, exit: 0.95 },
-    // panel 4 — retention predictor — 2.5-viewport slot; curve → bars → gauges
-    // → metrics resolve by `build`, then hold through a generous end dwell.
-    { el: document.querySelector('.panel-4'), kind: 'retention', start: 9.0, span: 2.5,
-      enter: 0.10, build: 0.74, exit: 0.94 },
+    { el: document.querySelector('.panel-3'), kind: 'globe', start: 5.4, span: 5.2,
+      enter: 0.06, build: 0.74, exit: 0.95 },
+    // panel 4 — retention predictor; curve → bars → gauges → metrics resolve
+    // by `build`, then hold through a generous end dwell.
+    { el: document.querySelector('.panel-4'), kind: 'retention', start: 10.6, span: 3.1,
+      enter: 0.08, build: 0.60, exit: 0.90 },
     // close CTA — the glowing hairline expands into a full-screen neon frame,
-    // then the CTA content resolves and holds (build 0.80 → 0.99 dwell).
-    { el: document.querySelector('.cta'), kind: 'cta', start: 11.5, span: 1.5,
-      enter: 0.12, build: 0.80, exit: 0.99 },
+    // then the CTA content resolves and holds (build 0.62 → 0.99 dwell).
+    { el: document.querySelector('.cta'), kind: 'cta', start: 13.7, span: 2.0,
+      enter: 0.10, build: 0.62, exit: 0.99 },
   ];
   const fx = document.getElementById("fx");
   const ctaEl = document.querySelector(".cta");
