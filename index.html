@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>addictd.ai — initial concept</title>
+<link rel="preload" href="assets/logo-black.png" as="image" />
+<link rel="preload" href="assets/logo-purple.png" as="image" />
+<link rel="stylesheet" href="panels.css" />
+<style>
+  :root {
+    --bg: #050308;
+    --ink: #9b5cff;
+    --ink-hot: #c89bff;
+    --line: rgba(180, 150, 255, 0.10);
+    --line-hot: rgba(200, 160, 255, 0.55);
+    --text: #d9d3ea;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+    --sans: "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #000; color: var(--text); font-family: var(--sans); }
+  body {
+    min-height: 900vh; /* hero 1 + p1 2 (build+dwell) + p2 1 + p3 4 (globe) + outro 1 */
+    overflow-x: hidden;
+    cursor: none;
+  }
+  a { color: inherit; }
+
+  /* ============================================================== HERO
+     Stripped to the logo only — no Tron floor grid, horizon, HUD chrome,
+     ring, labels, scroll cue or wordmark. Just the logo on black. */
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: radial-gradient(120% 80% at 50% 35%, #0a0612 0%, #050308 40%, #000 75%) #000;
+    /* will be transformed via JS on scroll */
+    transform-origin: 50% 50%;
+    will-change: transform, filter, opacity;
+  }
+
+  /* --- subtle ambient texture (no purple lines, no text) --- */
+  .scanlines {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.018) 0 1px,
+      transparent 1px 3px
+    );
+    mix-blend-mode: screen;
+  }
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.85) 100%);
+  }
+
+  /* --- the logo container hosts the WebGL canvas (enlarged) --- */
+  .logo-wrap {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: min(78vmin, 940px);
+    height: min(78vmin, 940px);
+    transform: translate(-50%, -50%);
+    will-change: transform, filter;
+  }
+  /* the WebGL canvas spans full viewport so the mouse-followed ink can roam, but the
+     logo art only appears in the centered logo footprint */
+  #fx {
+    position: fixed;
+    inset: 0;
+    width: 100vw; height: 100vh;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  /* --- custom cursor (sharp, sleek arrow — no glow, no animation) --- */
+  .cursor {
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 100;
+    pointer-events: none;
+    width: 18px; height: 18px;
+  }
+  .cursor svg { width: 100%; height: 100%; display: block; }
+
+  /* scroll-progress strip at top */
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0%;
+    background: linear-gradient(90deg, transparent, var(--ink-hot));
+    z-index: 50;
+    box-shadow: 0 0 10px var(--ink-hot);
+  }
+
+  /* hide native cursor only on desktop */
+  @media (hover: none) { body { cursor: auto; } .cursor { display: none; } }
+</style>
+</head>
+<body>
+
+  <!-- progress bar -->
+  <div class="progress" id="progress"></div>
+
+  <!-- HERO STAGE -->
+  <div class="stage" id="stage">
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <div class="logo-wrap" id="logoWrap"></div>
+  </div>
+
+  <!-- STORY: two panels sliding in from the left (plain black backdrop) -->
+  <div class="story" id="story">
+
+    <!-- =========== PANEL 1 — INSTANT PAYOUTS (two coin stacks) =========== -->
+    <section class="panel panel-1">
+      <div class="wipe-trail"></div>
+      <div class="panel-inner">
+        <div class="p1-stage" id="p1stage">
+          <!-- two stacks, populated by panels.js -->
+          <div class="p1-stack" data-stack="0"></div>
+          <div class="p1-stack" data-stack="1"></div>
+        </div>
+      </div>
+      <div class="p-chrome">
+        <div class="bracket tl"></div>
+        <div class="bracket tr"></div>
+        <div class="bracket bl"></div>
+        <div class="bracket br"></div>
+        <div class="idtag"><span class="dot"></span><span>01</span></div>
+      </div>
+      <div class="wipe"></div>
+    </section>
+
+    <!-- =========== PANEL 2 — RPM: cash drops into wallet, wallet closes =========== -->
+    <section class="panel panel-2">
+      <div class="wipe-trail"></div>
+      <div class="panel-inner">
+        <div class="p2-stage">
+          <div class="p2-meter">
+            <span style="--d: 0s"></span>
+            <span style="--d: 0.02s"></span>
+            <span style="--d: 0.04s"></span>
+            <span style="--d: 0.06s"></span>
+            <span style="--d: 0.08s"></span>
+            <span style="--d: 0.10s"></span>
+            <span style="--d: 0.12s"></span>
+            <span style="--d: 0.14s"></span>
+            <span style="--d: 0.16s"></span>
+            <span style="--d: 0.18s"></span>
+            <span style="--d: 0.20s"></span>
+            <span style="--d: 0.22s"></span>
+          </div>
+          <div class="wallet">
+            <div class="wallet-pocket"></div>
+            <img class="wallet-cash" src="assets/cash-stack.png" alt="" />
+            <div class="wallet-flap"></div>
+          </div>
+        </div>
+      </div>
+      <div class="p-chrome">
+        <div class="bracket tl"></div>
+        <div class="bracket tr"></div>
+        <div class="bracket bl"></div>
+        <div class="bracket br"></div>
+        <div class="idtag"><span class="dot"></span><span>02</span></div>
+      </div>
+      <div class="wipe"></div>
+    </section>
+
+    <!-- =========== PANEL 3 — GEO PAYOUTS: orthographic globe + per-country rate beacons =========== -->
+    <section class="panel panel-3">
+      <div class="wipe-trail"></div>
+      <div class="panel-inner">
+        <div class="p3-stage" id="p3stage">
+          <canvas class="p3-globe" id="p3globe"></canvas>
+
+          <!-- HUD-mono leader labels — positioned by JS to follow country points on the sphere -->
+          <div class="p3-readout" data-iso="USA">
+            <span class="iso">US</span><span class="val">5.00</span><span class="unit">/ 1K</span>
+          </div>
+          <div class="p3-readout" data-iso="GBR">
+            <span class="iso">UK</span><span class="val">3.20</span><span class="unit">/ 1K</span>
+          </div>
+          <div class="p3-readout" data-iso="BRA">
+            <span class="iso">BR</span><span class="val">1.10</span><span class="unit">/ 1K</span>
+          </div>
+          <div class="p3-readout" data-iso="IND">
+            <span class="iso">IN</span><span class="val">0.50</span><span class="unit">/ 1K</span>
+          </div>
+
+          <!-- Axis tick rows flanking the globe (Tron framing — match panel 02's HUD axis lines) -->
+          <div class="p3-axis p3-axis-l"></div>
+          <div class="p3-axis p3-axis-r"></div>
+        </div>
+      </div>
+      <div class="p-chrome">
+        <div class="bracket tl"></div>
+        <div class="bracket tr"></div>
+        <div class="bracket bl"></div>
+        <div class="bracket br"></div>
+        <div class="idtag"><span class="dot"></span><span>03</span></div>
+      </div>
+      <div class="wipe"></div>
+    </section>
+  </div>
+
+  <!-- WebGL effect canvas -->
+  <canvas id="fx"></canvas>
+
+  <!-- custom cursor — sharp, sleek arrow (tip anchored at the pointer) -->
+  <div class="cursor" id="cursor">
+    <svg viewBox="0 0 18 18" aria-hidden="true">
+      <path d="M0 0 L0 16 L4.4 11.8 L7.1 17.4 Z"
+        fill="#f1ecff" stroke="rgba(8,4,16,0.6)" stroke-width="1" stroke-linejoin="miter" />
+    </svg>
+  </div>
+
+  <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+  </script>
+
+  <script type="module" src="app.js"></script>
+
+  <!-- d3-geo + topojson-client for panel 03's globe -->
+  <script src="https://unpkg.com/d3-array@3/dist/d3-array.min.js"></script>
+  <script src="https://unpkg.com/d3-geo@3/dist/d3-geo.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+
+  <script src="panels.js" defer></script>
+  <script src="globe.js" defer></script>
+
+</body>
+</html>

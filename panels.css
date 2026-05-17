@@ -1,0 +1,644 @@
+/* ===========================================================
+   addictd.ai — Story panels (post-hero scroll sequence)
+   Two sections that sweep in from the left:
+     1. Instant Payouts — coins fall in to BUILD two stacks
+                          (driven by scroll); top coin spins.
+     2. Best RPMs       — cash drops into the wallet,
+                          flap closes (driven by scroll).
+   =========================================================== */
+
+/* ============================== Story container
+   Plain black backdrop — no grid / horizon / scan / vignette scaffolding. */
+.story {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  opacity: var(--story-on, 0);
+  overflow: hidden;
+  background: #000;
+}
+
+/* ============================== Panel base + wipe */
+.panel {
+  position: absolute;
+  inset: 0;
+  --enter: 0;     /* 0 → 1 as panel wipes in from left */
+  --exit: 0;      /* 0 → 1 as panel wipes out */
+  transform: translateX(calc(var(--exit, 0) * -10vw));
+  opacity: calc(1 - var(--exit, 0));
+  -webkit-clip-path: inset(0 calc((1 - var(--enter, 0)) * 100%) 0 0);
+  clip-path: inset(0 calc((1 - var(--enter, 0)) * 100%) 0 0);
+  pointer-events: none;
+  will-change: transform, opacity, clip-path;
+}
+
+/* leading scan line — the wipe edge, glowing */
+.panel .wipe {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(var(--enter, 0) * 100%);
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(200, 160, 255, 0.4) 18%,
+    var(--ink-hot) 50%,
+    rgba(200, 160, 255, 0.4) 82%,
+    transparent 100%);
+  box-shadow:
+    0 0 24px 4px rgba(200, 160, 255, 0.6),
+    0 0 80px 16px rgba(155, 92, 255, 0.25);
+  opacity: calc(min(var(--enter, 0) * 4, (1.0 - var(--enter, 0)) * 8));
+  pointer-events: none;
+}
+.panel .wipe::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -22px;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(200, 160, 255, 0.5), transparent);
+  opacity: 0.55;
+}
+
+/* horizontal fill streaks behind the wipe — like data flooding in */
+.panel .wipe-trail {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 4px,
+      rgba(200, 160, 255, 0.04) 4px 5px,
+      transparent 5px 14px
+    );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.6) calc(var(--enter, 0) * 100% - 20vw),
+    rgba(0, 0, 0, 0.0) calc(var(--enter, 0) * 100% + 1px),
+    transparent 100%);
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.6) calc(var(--enter, 0) * 100% - 20vw),
+    rgba(0, 0, 0, 0.0) calc(var(--enter, 0) * 100% + 1px),
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* inner content area */
+.panel-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================== Panel chrome */
+.p-chrome { position: absolute; inset: 0; pointer-events: none; }
+.p-chrome .bracket {
+  position: absolute;
+  width: 26px; height: 26px;
+  border: 1px solid var(--line-hot);
+  opacity: 0.65;
+}
+.p-chrome .bracket.tl { top: 5vh; left: 4vw; border-right: none; border-bottom: none; }
+.p-chrome .bracket.tr { top: 5vh; right: 4vw; border-left: none; border-bottom: none; }
+.p-chrome .bracket.bl { bottom: 5vh; left: 4vw; border-right: none; border-top: none; }
+.p-chrome .bracket.br { bottom: 5vh; right: 4vw; border-left: none; border-top: none; }
+.p-chrome .idtag {
+  position: absolute;
+  top: calc(5vh - 4px);
+  left: calc(4vw + 36px);
+  display: flex; gap: 10px; align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5em;
+  color: rgba(220, 205, 255, 0.5);
+  text-transform: uppercase;
+}
+.p-chrome .idtag .dot {
+  width: 6px; height: 6px;
+  background: var(--ink-hot);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--ink-hot);
+  animation: dot-pulse 1.6s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50%      { opacity: 1; transform: scale(1.1); }
+}
+
+/* ===================================================================
+   PANEL 1 — Instant Payouts (two coin stacks, right side)
+   =================================================================== */
+.panel-1 .panel-inner { justify-content: flex-end; padding-right: 16vw; }
+.p1-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 62px;
+  height: 64vh;
+}
+
+/* perspective so the upright spinning coin gets real 3D rotation depth */
+.p1-stack {
+  position: relative;
+  width: 150px;
+  height: 100%;
+  perspective: 720px;
+  perspective-origin: 50% 60%;
+}
+/* a glowing pad under each stack */
+.p1-stack::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.10) 40%, transparent 70%);
+  filter: blur(2px);
+}
+/* slightly bigger stack gets a brighter pad to emphasize it */
+.p1-stack.p1-stack--big::before {
+  width: 180%;
+  height: 16px;
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.14) 45%, transparent 75%);
+}
+/* vertical guide ticks beside each stack */
+.p1-stack::after {
+  content: "";
+  position: absolute;
+  left: -28px;
+  bottom: 0;
+  width: 1px;
+  height: 60%;
+  background-image: repeating-linear-gradient(0deg, rgba(180, 150, 255, 0.5) 0 1px, transparent 1px 14px);
+  opacity: 0.5;
+}
+
+.coin {
+  position: absolute;
+  left: 50%;
+  width: 152px;
+  height: 28px;
+  margin-left: -76px;
+  border-radius: 50%;
+  /* black & white metallic disc */
+  background:
+    radial-gradient(ellipse at 50% 25%,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(205, 205, 210, 0.95) 18%,
+      rgba(120, 120, 126, 1) 42%,
+      rgba(46, 46, 50, 1) 70%,
+      rgba(8, 8, 10, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 1px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(255, 255, 255, 0.18);
+}
+/* a thin neon rim across the top edge */
+.coin::before {
+  content: "";
+  position: absolute;
+  inset: 0 8% auto 8%;
+  top: 1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 240, 255, 0.8), transparent);
+}
+/* a darker reflection under the rim */
+.coin::after {
+  content: "";
+  position: absolute;
+  inset: 50% 6% 8% 6%;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.35));
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* stacked base coins — spaced via --i + scroll-driven fall offset --y + jitter rotation */
+.p1-stack .coin {
+  bottom: calc(var(--i) * 11px);
+  transform: translateY(var(--y, 0px)) rotate(var(--rot, 0deg));
+  opacity: var(--opacity, 1);
+  transition: opacity 0.08s linear;
+}
+
+/* ---- Upright spinning coin on top of the stack ----
+   This is a SEPARATE component from the side-view disc stack.
+   It is a face-on circular coin that rotates around its vertical (Y) axis.
+*/
+.coin-face {
+  position: absolute;
+  left: 50%;
+  bottom: var(--spin-bottom, 0px);
+  width: 118px;
+  height: 118px;
+  margin-left: -59px;
+  z-index: 4;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  animation: coin-face-spin 1.6s linear infinite;
+  transition: bottom 0.18s cubic-bezier(0.4, 1.6, 0.55, 1);
+  /* a soft drop shadow underneath the upright coin to ground it on the stack */
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+}
+@keyframes coin-face-spin {
+  to { transform: rotateY(360deg); }
+}
+.cf-side {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* black & white metallic face */
+  background: radial-gradient(circle at 38% 32%,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(228, 228, 232, 0.97) 14%,
+    rgba(138, 138, 144, 0.97) 48%,
+    rgba(52, 52, 56, 1) 82%,
+    rgba(10, 10, 12, 1) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.6),
+    inset 0 0 24px rgba(255, 255, 255, 0.12),
+    0 0 22px rgba(255, 255, 255, 0.22);
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cf-back { transform: rotateY(180deg); }
+/* outer rim groove */
+.cf-side::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+}
+/* inner dashed band — like the milled edge detail on a real coin */
+.cf-side::after {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  opacity: 0.9;
+}
+/* center emblem — a small lightning bolt for "instant payouts".
+   The decal is a flat, rich purple — the only color on the B&W coin. */
+.cf-mark {
+  width: 30%;
+  height: 64%;
+  position: relative;
+  z-index: 1;
+}
+.cf-mark path {
+  fill: #7d2fe6;
+  stroke: #7d2fe6;
+  stroke-width: 0.6;
+  paint-order: stroke fill;
+}
+
+/* sweeping highlight — a thin gleam that races across each face during the spin */
+.cf-side .gleam {
+  position: absolute;
+  inset: 12% 18%;
+  border-radius: 50%;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 250, 255, 0.55) 50%, transparent 65%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  animation: cf-gleam 1.6s ease-in-out infinite;
+}
+@keyframes cf-gleam {
+  0%, 100% { transform: translateX(-60%); opacity: 0; }
+  35%      { transform: translateX(0%); opacity: 0.9; }
+  70%      { transform: translateX(60%); opacity: 0; }
+}
+
+/* clean up: we no longer use the old scaleX-spinner. retained selector just for legacy. */
+.p1-stack .coin--spin {
+  display: none;
+}
+
+/* ===================================================================
+   PANEL 2 — RPM: cash → wallet → wallet closes
+   =================================================================== */
+.panel-2 .panel-inner { justify-content: center; }
+.p2-stage {
+  position: relative;
+  width: min(720px, 84vw);
+  height: 66vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1800px;
+  perspective-origin: 50% 30%;
+}
+
+.wallet {
+  position: relative;
+  width: 520px;
+  height: 320px;
+  transform-style: preserve-3d;
+  /* slight 3D camera tilt so we see the flap's hinge */
+  transform: rotateX(12deg);
+}
+
+/* a floor-shadow under the wallet for grounding */
+.wallet::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -28px;
+  width: 130%;
+  height: 24px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(155, 92, 255, 0.35), transparent 70%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+/* the body of the wallet — pocket; receives the cash */
+.wallet-pocket {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(40, 18, 88, 0.6) 0%, rgba(12, 6, 30, 1) 100%);
+  border: 1px solid rgba(200, 160, 255, 0.45);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 2px 0 rgba(200, 160, 255, 0.25),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.6),
+    inset 0 0 40px rgba(155, 92, 255, 0.18),
+    0 0 40px rgba(155, 92, 255, 0.25);
+  transform: translateZ(-4px);
+}
+/* horizontal stitch line across the middle of the pocket */
+.wallet-pocket::before {
+  content: "";
+  position: absolute;
+  left: 12px; right: 12px;
+  top: 50%;
+  height: 1px;
+  background-image: repeating-linear-gradient(90deg, rgba(220, 200, 255, 0.35) 0 6px, transparent 6px 12px);
+  opacity: 0.6;
+}
+/* inner corner brackets on the pocket */
+.wallet-pocket::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(200, 160, 255, 0.18);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* the cash sitting (or falling into) the pocket */
+.wallet-cash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  object-position: center;
+  transform: translate(-50%, -50%) translateY(var(--cash-y, -320px));
+  filter:
+    brightness(1.15)
+    drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 10px rgba(200, 160, 255, 0.5));
+  opacity: var(--cash-opacity, 0);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  transition: transform 0.08s linear, opacity 0.08s linear;
+}
+
+/* the flap — hinged at the top edge, rotates down to close over the pocket */
+.wallet-flap {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(60, 30, 120, 0.95) 0%, rgba(20, 10, 50, 1) 100%);
+  border: 1px solid rgba(200, 160, 255, 0.55);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(155, 92, 255, 0.22);
+  transform-origin: top center;
+  transform: rotateX(var(--flap-rot, 140deg));
+  backface-visibility: visible;
+  transform-style: preserve-3d;
+  transition: transform 0.1s linear;
+}
+/* a subtle neon seam at the flap edge */
+.wallet-flap::before {
+  content: "";
+  position: absolute;
+  left: 12px; right: 12px;
+  bottom: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ink-hot) 30%, var(--ink-hot) 70%, transparent);
+  opacity: 0.6;
+  box-shadow: 0 0 8px rgba(200, 160, 255, 0.4);
+}
+/* a small clasp / latch in the center of the flap */
+.wallet-flap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36px; height: 12px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(220, 180, 255, 0.6);
+  background: rgba(155, 92, 255, 0.15);
+  box-shadow: 0 0 8px rgba(200, 160, 255, 0.35), inset 0 0 6px rgba(200, 160, 255, 0.25);
+}
+/* HUD axis lines flanking the wallet (Tron framing) */
+.p2-stage::before,
+.p2-stage::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--line-hot), transparent);
+  opacity: 0.4;
+}
+.p2-stage::before { left: 6%; }
+.p2-stage::after  { right: 6%; }
+
+/* tiny tick marks above the wallet showing a "scan" line */
+.p2-meter {
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.p2-meter span {
+  width: 2px; height: 8px;
+  background: rgba(180, 150, 255, 0.3);
+  animation: p2-meter-flash 0.16s var(--d, 0s) ease-in-out infinite;
+}
+.p2-meter span:nth-child(odd) { height: 12px; background: rgba(200, 160, 255, 0.5); }
+@keyframes p2-meter-flash {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; box-shadow: 0 0 6px rgba(200, 160, 255, 0.6); }
+}
+
+/* ===================================================================
+   PANEL 3 — GEO PAYOUTS: orthographic globe + per-country rate beacons
+   The globe rotates the four target countries (US, UK, BR, IN) to the
+   facing position in sequence. Their CPM rate appears as a HUD-mono
+   leader-label attached to the country's position on the sphere.
+
+   Hairlines + single-hue purple. No fills, no boxes. The rate values
+   are the only real "data" — drawn in the HUD register (mono, tracked,
+   small) with the dollar value picked out larger in --ink-hot.
+   =================================================================== */
+.panel-3 .panel-inner { justify-content: center; }
+
+.p3-stage {
+  position: relative;
+  width: min(960px, 92vw);
+  height: 78vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The canvas the globe paints into. Sized 1:1 to .p3-stage by JS,
+   sharpened with devicePixelRatio. */
+.p3-globe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Tron axis lines flanking the globe — same vocabulary as panel-2's
+   .p2-stage::before/::after. */
+.p3-axis {
+  position: absolute;
+  top: 14%;
+  bottom: 14%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--line-hot), transparent);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.p3-axis-l { left: 4%; }
+.p3-axis-r { right: 4%; }
+
+/* tick marks at the top center, same family as p2-meter, much sparser */
+.p3-stage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 1px;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(200, 160, 255, 0.45) 0 1px,
+    transparent 1px 12px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+/* corresponding tick row at the bottom */
+.p3-stage::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 1px;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(200, 160, 255, 0.45) 0 1px,
+    transparent 1px 12px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* HUD-mono leader labels — positioned in JS via transform on each .p3-readout */
+.p3-readout {
+  position: absolute;
+  left: 0; top: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  will-change: transform, opacity;
+  opacity: 0;
+  /* center the box on the translate coordinate JS writes */
+  transform: translate3d(-9999px, -9999px, 0) translate(-50%, -50%);
+  transition: color 0.18s linear, opacity 0.12s linear;
+}
+.p3-readout .iso {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+.p3-readout .val {
+  font-family: var(--mono);
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+.p3-readout .val::before {
+  content: "$";
+  opacity: 0.55;
+  margin-right: 1px;
+  font-size: 0.65em;
+  letter-spacing: 0;
+  position: relative;
+  top: -1px;
+}
+.p3-readout .unit {
+  font-size: 9px;
+  opacity: 0.55;
+  letter-spacing: 0.18em;
+}
+.p3-readout.is-active {
+  color: rgba(255, 255, 255, 0.95);
+}
+.p3-readout.is-active .iso {
+  color: rgba(255, 255, 255, 1);
+}
+.p3-readout.is-active .val {
+  font-size: 22px;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.7),
+    0 0 28px rgba(255, 255, 255, 0.35);
+}
+
+/* On coarse pointers, scale the readouts down — they crowd a small viewport. */
+@media (max-width: 700px) {
+  .p3-stage { height: 64vh; }
+  .p3-readout { font-size: 9px; gap: 6px; }
+  .p3-readout .val { font-size: 14px; }
+  .p3-readout.is-active .val { font-size: 17px; }
+}
