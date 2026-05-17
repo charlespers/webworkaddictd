@@ -139,8 +139,7 @@
 
     buildStage(panel);
     state.booted = true;
-    // start the idle rAF so model pulses keep moving even when scroll is still
-    requestAnimationFrame(tick);
+    // panel 4 is fully scroll-driven — no rAF loop needed.
   }
 
   function buildStage(panel) {
@@ -397,7 +396,8 @@
   }
 
   function apply() {
-    if (!state.booted) return;
+    // fully scroll-driven — skip the DOM writes entirely while off-screen
+    if (!state.booted || lastVis < 0.5) return;
     const h = lastHold;
 
     // ── (D) Retention curve — reveal by stroke-dashoffset
@@ -451,11 +451,6 @@
       const localP = clamp01((fP - start) * 5);
       row.classList.toggle('show', localP > 0.4);
     });
-  }
-
-  // ─── rAF loop — currently a no-op; kept as a hook for future per-frame motion.
-  function tick() {
-    requestAnimationFrame(tick);
   }
 
   // ─── expose ──────────────────────────────────────────────────────────

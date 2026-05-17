@@ -339,7 +339,13 @@ function onScroll() {
 
   updateLogoBox();
 }
-window.addEventListener("scroll", onScroll, { passive: true });
+// rAF-throttle scroll: at most one onScroll (which reads layout) per frame
+let scrollRaf = false;
+window.addEventListener("scroll", () => {
+  if (scrollRaf) return;
+  scrollRaf = true;
+  requestAnimationFrame(() => { scrollRaf = false; onScroll(); });
+}, { passive: true });
 
 // ----- Render loop
 let last = performance.now();

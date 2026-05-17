@@ -239,7 +239,8 @@
     state.spinAdd = targetIsNeutral ? state.spin : 0;
 
     render();
-    updateReadouts();
+    // skip the per-frame projection + leader-label work while off-screen
+    if (state.visible > 0.01) updateReadouts();
 
     requestAnimationFrame(tick);
   }

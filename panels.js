@@ -227,19 +227,29 @@
       // internal animation runs from `enter` to `build`; past `build` it
       // clamps at 1 so the final state holds (the dwell) until the wipe-out
       const hold = clamp01((qn - p.enter) / (p.build - p.enter));
-      if (p.kind === 'coins') updatePanel1(hold);
-      else if (p.kind === 'wallet') updatePanel2(hold);
+      // coins / wallet / cta are pure DOM writes — skip them while off-screen.
+      // globe + retention are always notified so they can stand their own
+      // render work down when not visible.
+      if (p.kind === 'coins') { if (visible) updatePanel1(hold); }
+      else if (p.kind === 'wallet') { if (visible) updatePanel2(hold); }
       else if (p.kind === 'globe' && window.__globe) {
         window.__globe.setProgress(hold, visible ? 1 : 0);
       }
       else if (p.kind === 'retention' && window.__retention) {
         window.__retention.setProgress(hold, visible ? 1 : 0);
       }
-      else if (p.kind === 'cta') updateCta(hold);
+      else if (p.kind === 'cta') { if (visible) updateCta(hold); }
     }
   }
 
-  window.addEventListener("scroll", update, { passive: true });
+  // rAF-throttle scroll: collapse a burst of scroll events into one update per frame
+  let scrollScheduled = false;
+  function onScroll() {
+    if (scrollScheduled) return;
+    scrollScheduled = true;
+    requestAnimationFrame(() => { scrollScheduled = false; update(); });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", update);
   update();
 })();
