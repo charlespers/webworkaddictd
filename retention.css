@@ -1,0 +1,284 @@
+/* ===================================================================
+   PANEL 4 — Retention Predictor (in-house model showcase)
+   Black & white: retention "tier" is encoded by luminosity (bright =
+   holding, dim = cliff), never by hue. Labels in the Michroma display
+   family. Markup is built into .panel-4 .panel-inner by retention.js.
+   =================================================================== */
+
+.panel-4 .panel-inner {
+  justify-content: center;
+  align-items: center;
+}
+
+.p4-stage {
+  position: relative;
+  width: min(1100px, 92vw);
+  height: 86vh;
+  max-height: 760px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  font-family: var(--sans);
+  color: var(--text);
+}
+
+/* small HUD label — Michroma micro register */
+.p4-stage .p4-mono {
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+/* ─── output column: curve / timeline / scores / metrics ─── */
+.p4-output {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  grid-template-rows: 1fr auto auto auto;
+  gap: 22px;
+  min-height: 0;
+  align-self: stretch;
+}
+
+/* Retention curve */
+.p4-curve {
+  position: relative;
+  min-height: 240px;
+  padding-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+}
+.p4-curve-svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 200px;
+  overflow: visible;
+}
+.p4-curve-svg .grid {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 0.6;
+}
+.p4-curve-svg .axis {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 0.8;
+}
+.p4-curve-svg .axis-tick {
+  fill: rgba(255, 255, 255, 0.4);
+  font-family: var(--display);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+.p4-curve-svg .corpus-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.p4-curve-svg .curve-glow {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.2;
+  filter: blur(2px);
+}
+.p4-curve-svg .curve-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.p4-curve-svg .head-dot {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.85));
+}
+
+/* Timeline — per-second bars */
+.p4-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.p4-timeline-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.p4-timeline-legend {
+  display: flex;
+  gap: 14px;
+}
+.p4-timeline-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--display);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.p4-timeline-legend i {
+  width: 8px; height: 8px;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.95);
+}
+.p4-timeline-legend .l-decl i  { background: rgba(255, 255, 255, 0.6); }
+.p4-timeline-legend .l-cliff i { background: rgba(255, 255, 255, 0.32); }
+
+.p4-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 110px;
+  padding-bottom: 16px;
+  position: relative;
+}
+.p4-bar {
+  position: relative;
+  flex: 1 1 0;
+  height: 1px;
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  transition: height 0.10s linear, opacity 0.10s linear;
+}
+.p4-bar.tier-1 { background: rgba(255, 255, 255, 0.6); }
+.p4-bar.tier-2 {
+  background: rgba(255, 255, 255, 0.32);
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+.p4-bar.is-warn::after {
+  content: "△";
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%) scale(var(--warn, 0));
+  font-family: var(--display);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  transition: transform 0.18s cubic-bezier(0.4, 1.6, 0.55, 1);
+  opacity: 0.9;
+}
+
+/* Score gauges */
+.p4-scores {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.p4-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: var(--g-op, 0);
+  transition: opacity 0.18s;
+}
+.p4-gauge-ring {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from -90deg,
+      var(--gauge-c, #fff) 0deg,
+      var(--gauge-c, #fff) calc(var(--p, 0) * 360deg),
+      rgba(255, 255, 255, 0.1) calc(var(--p, 0) * 360deg),
+      rgba(255, 255, 255, 0.1) 360deg);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, calc(var(--p, 0) * 0.3)));
+}
+.p4-gauge-ring::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #000;
+}
+.p4-gauge-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 16px;
+  color: var(--gauge-c, #fff);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+}
+.p4-gauge-label {
+  font-family: var(--display);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Explanatory metrics */
+.p4-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 28px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.p4-metric {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.p4-metric.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.p4-metric .m-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  flex: none;
+  transform: translateY(-2px);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+.p4-metric.tier-1 .m-dot { background: rgba(255, 255, 255, 0.6); box-shadow: none; }
+.p4-metric.tier-2 .m-dot { background: rgba(255, 255, 255, 0.34); box-shadow: none; }
+.p4-metric .m-label {
+  font-family: var(--display);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  flex: none;
+  min-width: 68px;
+}
+.p4-metric .m-text {
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(220, 205, 255, 0.62);
+}
+
+/* Responsive — collapse on narrow viewports */
+@media (max-width: 900px) {
+  .p4-stage { height: 80vh; }
+  .p4-metrics { grid-template-columns: 1fr; }
+  .p4-scores { gap: 8px; }
+  .p4-gauge-ring { width: 44px; height: 44px; }
+  .p4-gauge-val { font-size: 14px; }
+}

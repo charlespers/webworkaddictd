@@ -145,10 +145,10 @@
     // the globe stays parked on it so scrolling reads as a clear stopping
     // point; the brief gaps between are the inter-country rotation sweeps.
     const PHASES = [
-      { start: 0.05, arrive: 0.12, dwellEnd: 0.27 }, // US
-      { start: 0.34, arrive: 0.41, dwellEnd: 0.50 }, // UK
-      { start: 0.57, arrive: 0.64, dwellEnd: 0.73 }, // BR
-      { start: 0.80, arrive: 0.87, dwellEnd: 0.96 }, // IN
+      { start: 0.04, arrive: 0.12, dwellEnd: 0.28 }, // US
+      { start: 0.34, arrive: 0.42, dwellEnd: 0.54 }, // UK
+      { start: 0.60, arrive: 0.68, dwellEnd: 0.80 }, // BR
+      { start: 0.86, arrive: 0.93, dwellEnd: 1.00 }, // IN — parks and holds to the end
     ];
 
     // Build a piecewise rotation target over the hold timeline.

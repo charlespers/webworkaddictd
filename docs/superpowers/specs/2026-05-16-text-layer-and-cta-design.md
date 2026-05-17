@@ -57,6 +57,23 @@ margins (logo may take a minor size trim if it crowds).
 - Each label reveals with its panel's wipe — opacity/transform tied to the
   existing `--enter` CSS custom property the panel already exposes.
 
+### 3a. Act 1 — extra content (payment platforms)
+
+Act 1's left block carries more than just the name. Below `INSTANT PAYOUTS`:
+
+- A micro sub-line: `Fast payouts, where you're familiar`.
+- A row of payment-platform logos beneath it. Based on the platforms Whop
+  supports for payouts/checkout (bank/ACH, crypto, Venmo, Cash App, Apple Pay,
+  PayPal), the proposed set is: **Whop · Apple Pay · PayPal · Cash App · Venmo ·
+  Crypto (Bitcoin)**.
+- Logos are **monochrome** (white/grey) inline SVGs — full-colour brand marks
+  would clash with the deliberately black-&-white coin panel and the hairline
+  Tron palette. Sourced as SVG path data from an open icon set (Simple Icons,
+  CC0); any logo not available there is drawn as a simple monochrome wordmark.
+- The logo row sits in a single line, evenly spaced, dim by default; it reveals
+  with the panel wipe alongside the label.
+- Acts 2 and 3 keep just their name (no sub-line, no logos).
+
 ## 4. Close CTA section
 
 A new final section after panel-3, using the call to action from **V1's**

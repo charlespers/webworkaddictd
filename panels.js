@@ -1,14 +1,16 @@
 // panels.js — drives the two sweep-in panels and their scroll-driven
 // internal animations.
 //
-// Scroll layout (body min-height: 900vh):
-//   0..1 vh  hero (driven by app.js)
-//   1..3 vh  panel 1 (instant payouts) — 2-viewport slot:
-//              wipe-in, coins build, dwell on the final state, wipe-out
-//   3..4 vh  panel 2 (best RPMs)       — cash drops, flap closes
-//   4..8 vh  panel 3 (geo payouts)     — 4-viewport slot: orthographic globe
-//              arcs through US → UK → BR → IN, parking on each (scroll block)
-//   8..9 vh  outro buffer
+// Scroll layout (body min-height: 1400vh):
+//   0..1     vh  hero (driven by app.js)
+//   1..3     vh  panel 1 (instant payouts) — coins build
+//   3..4.5   vh  panel 2 (highest RPMs)    — cash drops, flap closes
+//   4.5..9   vh  panel 3 (geo payouts)     — globe parks on US → UK → BR → IN
+//   9..11.5  vh  panel 4 (retention)       — curve → bars → gauges → metrics
+//  11.5..13  vh  close CTA — a hairline expands into a full-screen neon frame
+//
+// Every panel ends on a dwell (the gap between `build` and `exit`) — a scroll
+// stop where the panel's final state holds before its wipe-out.
 //
 // Each panel has kind / start / span / enter / build / exit (all in
 // slot-normalised qn 0→1). enter→build drives the internal animation; the
@@ -18,22 +20,28 @@
 (function () {
   const story = document.getElementById("story");
   const panels = [
-    // panel 1 occupies a 2-viewport slot: wipe-in, coins build (enter→build),
-    // then a dwell (build→exit) where the fully-stacked state holds, then wipe-out.
+    // Every panel: wipe-in (0→enter), internal animation (enter→build), then a
+    // dwell (build→exit) where the final state holds while you keep scrolling
+    // — the "scroll stop" between acts — then wipe-out (exit→1).
     { el: document.querySelector('.panel-1'), kind: 'coins', start: 1.0, span: 2.0,
       enter: 0.10, build: 0.50, exit: 0.82 },
-    // panel 2 follows the dwell in a normal 1-viewport slot (build === exit:
-    // its animation runs right up to the wipe-out, no dwell)
-    { el: document.querySelector('.panel-2'), kind: 'wallet', start: 3.0, span: 1.0,
-      enter: 0.22, build: 0.82, exit: 0.82 },
-    // panel 3 — geo-payouts globe — gets a 4-viewport slot so the camera arc
-    // through the four country dwells stays smooth even on fast scroll, and
-    // each country's "scroll block" (see globe.js PHASES) reads as a real stop.
-    // build === exit: the globe maps its whole arc across enter→exit (no dwell).
-    { el: document.querySelector('.panel-3'), kind: 'globe', start: 4.0, span: 4.0,
-      enter: 0.08, build: 0.94, exit: 0.94 },
+    { el: document.querySelector('.panel-2'), kind: 'wallet', start: 3.0, span: 1.5,
+      enter: 0.16, build: 0.60, exit: 0.84 },
+    // panel 3 — geo globe — 4.5-viewport slot; the globe parks on each country
+    // (see globe.js PHASES) and holds on the last one through the end dwell.
+    { el: document.querySelector('.panel-3'), kind: 'globe', start: 4.5, span: 4.5,
+      enter: 0.07, build: 0.86, exit: 0.95 },
+    // panel 4 — retention predictor — 2.5-viewport slot; curve → bars → gauges
+    // → metrics resolve by `build`, then hold through a generous end dwell.
+    { el: document.querySelector('.panel-4'), kind: 'retention', start: 9.0, span: 2.5,
+      enter: 0.10, build: 0.74, exit: 0.94 },
+    // close CTA — the glowing hairline expands into a full-screen neon frame,
+    // then the CTA content resolves and holds (build 0.80 → 0.99 dwell).
+    { el: document.querySelector('.cta'), kind: 'cta', start: 11.5, span: 1.5,
+      enter: 0.12, build: 0.80, exit: 0.99 },
   ];
   const fx = document.getElementById("fx");
+  const ctaEl = document.querySelector(".cta");
 
   const STACK_SIZES = [26, 36];   // [left small, right large] — ~10 coins taller per stack
   const FALL_PX = 240;            // how far above each coin starts before falling
@@ -175,6 +183,22 @@
   }
 
   // ============================================================
+  // CLOSE CTA — a hairline expands into a full-screen neon frame
+  // ============================================================
+  function updateCta(p) {
+    if (!ctaEl) return;
+    // p 0→1 across the CTA hold window: the hairline grows in width, then in
+    // height into a full frame, then the CTA content resolves inside.
+    const w = smoothstep(0.00, 0.42, p);
+    const h = smoothstep(0.38, 0.74, p);
+    const c = smoothstep(0.74, 1.00, p);
+    ctaEl.style.setProperty("--frame-w", w.toFixed(3));
+    ctaEl.style.setProperty("--frame-h", h.toFixed(3));
+    ctaEl.style.setProperty("--content", c.toFixed(3));
+    ctaEl.classList.toggle("cta-live", c > 0.6);
+  }
+
+  // ============================================================
   // Master scroll handler
   // ============================================================
   function update() {
@@ -208,6 +232,10 @@
       else if (p.kind === 'globe' && window.__globe) {
         window.__globe.setProgress(hold, visible ? 1 : 0);
       }
+      else if (p.kind === 'retention' && window.__retention) {
+        window.__retention.setProgress(hold, visible ? 1 : 0);
+      }
+      else if (p.kind === 'cta') updateCta(hold);
     }
   }
 

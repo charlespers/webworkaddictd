@@ -109,28 +109,6 @@
 .p-chrome .bracket.tr { top: 5vh; right: 4vw; border-left: none; border-bottom: none; }
 .p-chrome .bracket.bl { bottom: 5vh; left: 4vw; border-right: none; border-top: none; }
 .p-chrome .bracket.br { bottom: 5vh; right: 4vw; border-left: none; border-top: none; }
-.p-chrome .idtag {
-  position: absolute;
-  top: calc(5vh - 4px);
-  left: calc(4vw + 36px);
-  display: flex; gap: 10px; align-items: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.5em;
-  color: rgba(220, 205, 255, 0.5);
-  text-transform: uppercase;
-}
-.p-chrome .idtag .dot {
-  width: 6px; height: 6px;
-  background: var(--ink-hot);
-  border-radius: 50%;
-  box-shadow: 0 0 10px var(--ink-hot);
-  animation: dot-pulse 1.6s ease-in-out infinite;
-}
-@keyframes dot-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(0.85); }
-  50%      { opacity: 1; transform: scale(1.1); }
-}
 
 /* ===================================================================
    PANEL 1 — Instant Payouts (two coin stacks, right side)
@@ -333,10 +311,11 @@
 /* ===================================================================
    PANEL 2 — RPM: cash → wallet → wallet closes
    =================================================================== */
-.panel-2 .panel-inner { justify-content: center; }
+/* System B — visual pushed right of centre, act label fills the left */
+.panel-2 .panel-inner { justify-content: flex-end; padding-right: 8vw; }
 .p2-stage {
   position: relative;
-  width: min(720px, 84vw);
+  width: min(620px, 56vw);
   height: 66vh;
   display: flex;
   align-items: center;
@@ -509,11 +488,12 @@
    are the only real "data" — drawn in the HUD register (mono, tracked,
    small) with the dollar value picked out larger in --ink-hot.
    =================================================================== */
-.panel-3 .panel-inner { justify-content: center; }
+/* System B — globe pushed right of centre, act label fills the left */
+.panel-3 .panel-inner { justify-content: flex-end; padding-right: 6vw; }
 
 .p3-stage {
   position: relative;
-  width: min(960px, 92vw);
+  width: min(680px, 56vw);
   height: 78vh;
   display: flex;
   align-items: center;
@@ -641,4 +621,185 @@
   .p3-readout { font-size: 9px; gap: 6px; }
   .p3-readout .val { font-size: 14px; }
   .p3-readout.is-active .val { font-size: 17px; }
+}
+
+/* ============================================================
+   TEXT LAYER — Michroma display (neon outline) + micro register.
+   Shared by the hero copy, the act labels and the close CTA.
+   ============================================================ */
+.neon {
+  font-family: var(--display);
+  font-weight: 400;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1.1px rgba(228, 210, 255, 0.95);
+  text-shadow:
+    0 0 9px rgba(155, 92, 255, 0.85),
+    0 0 28px rgba(124, 47, 237, 0.6),
+    0 0 58px rgba(124, 47, 237, 0.4);
+}
+.micro {
+  font-family: var(--display);
+  font-weight: 400;
+  text-transform: uppercase;
+  color: rgba(220, 205, 255, 0.6);
+}
+
+/* ============================================================
+   ACT LABELS — System B: name on the left, visual on the right.
+   Lives inside .panel, so the panel's clip-path wipe reveals it.
+   ============================================================ */
+.act-label {
+  position: absolute;
+  left: 6.5vw;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(33vw, 360px);
+  z-index: 5;
+  pointer-events: none;
+}
+.act-name {
+  margin: 0;
+  font-size: clamp(22px, 2.8vw, 38px);
+  letter-spacing: 0.10em;
+  line-height: 1.34;
+}
+.act-sub {
+  margin: 20px 0 0;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  line-height: 1.65;
+  color: rgba(220, 205, 255, 0.5);
+}
+/* readable body sentence — sans, sentence case (not the tracked micro register) */
+.act-desc {
+  margin: 13px 0 0;
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: rgba(220, 205, 255, 0.5);
+}
+
+/* Act 1 only — payment-platform logo row (monochrome) */
+.act-logos {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 18px;
+}
+.act-logo {
+  height: 17px;
+  width: auto;
+  opacity: 0.62;
+}
+.act-logo--word {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
+  color: #ffffff;
+  opacity: 0.78;
+}
+
+/* ============================================================
+   CLOSE CTA — "Ready to clip?".
+   .cta-frame starts as a 3px dot; panels.js grows it first in width
+   (a glowing hairline), then in height into a full-screen neon
+   frame, then resolves .cta-inner inside. Driven by kind 'cta'.
+   ============================================================ */
+.cta {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: var(--enter, 0);
+  visibility: hidden;            /* panels.js toggles per scroll range */
+  pointer-events: none;
+}
+.cta-frame {
+  position: relative;
+  width: calc(3px + (96vw - 3px) * var(--frame-w, 0));
+  height: calc(3px + (90vh - 3px) * var(--frame-h, 0));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--ink-hot);
+  box-shadow:
+    0 0 22px rgba(200, 160, 255, 0.55),
+    0 0 70px rgba(124, 47, 237, 0.3),
+    inset 0 0 60px rgba(124, 47, 237, 0.12);
+}
+.cta-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  opacity: var(--content, 0);
+  transform: scale(calc(0.92 + 0.08 * var(--content, 0)));
+}
+.cta-head {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 92px);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.cta-join {
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-indent: 0.16em;
+  color: rgba(228, 215, 255, 0.85);
+  text-decoration: none;
+  padding: 15px 34px;
+  border: 1px solid var(--line-hot);
+  box-shadow:
+    0 0 18px rgba(155, 92, 255, 0.25),
+    inset 0 0 24px rgba(155, 92, 255, 0.08);
+  pointer-events: none;
+  transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+/* the CTA button becomes clickable only once the content has resolved */
+.cta.cta-live .cta-join { pointer-events: auto; }
+.cta-join:hover {
+  color: #ffffff;
+  border-color: var(--ink-hot);
+  box-shadow:
+    0 0 28px rgba(200, 160, 255, 0.5),
+    inset 0 0 30px rgba(155, 92, 255, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-frame { width: 96vw; height: 90vh; }
+  .cta-inner { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   Narrow screens — act label moves above the visual, recentred
+   ============================================================ */
+@media (max-width: 900px) {
+  .panel-1 .panel-inner,
+  .panel-2 .panel-inner,
+  .panel-3 .panel-inner {
+    justify-content: center;
+    align-items: flex-end;
+    padding-right: 0;
+    padding-bottom: 4vh;
+  }
+  .act-label {
+    left: 50%;
+    top: 7%;
+    transform: translateX(-50%);
+    width: min(90vw, 560px);
+    text-align: center;
+  }
+  .act-logos { justify-content: center; }
+  .p3-stage { width: min(680px, 92vw); }
 }
